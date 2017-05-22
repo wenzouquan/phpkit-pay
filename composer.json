@@ -1,0 +1,24 @@
+{
+    "name": "phpkit/pay",
+    "description": "the new thinkphp framework",
+    "type": "project",
+    "keywords": [
+        "pay"
+    ],
+    "homepage": "http://www.phpkit.me/",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "liu21st",
+            "email": "liu21st@gmail.com"
+        }
+    ],
+    "config": {
+        "preferred-install": "dist"
+    },
+     "autoload": {
+        "psr-4": {
+            "phpkit\\pay\\": "src/"
+        }
+    }
+}

@@ -1,6 +1,6 @@
 {
     "name": "phpkit/pay",
-    "description": "第三方支付 ， 微信 支付宝 京东等。。",
+    "description": "第三方支付 ， 微信 支付宝 京东 十多种支付方式。。",
     "type": "project",
     "keywords": [
         "pay"

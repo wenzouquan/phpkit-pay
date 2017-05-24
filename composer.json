@@ -1,6 +1,6 @@
 {
     "name": "phpkit/pay",
-    "description": "the new thinkphp framework",
+    "description": "第三方支付 ， 微信 支付宝 京东等。。",
     "type": "project",
     "keywords": [
         "pay"

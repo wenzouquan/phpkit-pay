@@ -513,6 +513,20 @@ class WxPayApi {
 	 * @param int $second url执行超时时间，默认30s
 	 * @throws WxPayException
 	 */
+
+	private static function postXmlCurl2($post = null, $url) {
+		//$content = http_build_query($post);
+		$content_length = strlen($post);
+		$options = array(
+			'http' => array(
+				'method' => 'POST',
+				'header' => "Content-type: application/x-www-form-urlencoded",
+				'content' => $post,
+			),
+		);
+		return file_get_contents($url, false, stream_context_create($options));
+	}
+
 	private static function postXmlCurl($xml, $url, $useCert = false, $second = 30) {
 		$ch = curl_init();
 		//超时时间
@@ -526,11 +540,10 @@ class WxPayApi {
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 		//设置header
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		curl_setopt($ch, CURLOPT_SSLVERSION, 3);
 		//要求结果为字符串且输出到屏幕上
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		//dump(APP_PATH."/Common/Org/cert/apiclient_cert.pem");exit();
 		if ($useCert == true) {
-			//设置证书
 			//使用证书：cert 与 key 分别属于两个.pem文件
 			curl_setopt($ch, CURLOPT_SSLCERTTYPE, 'PEM');
 			curl_setopt($ch, CURLOPT_SSLCERT, COMMON_PATH . "/Org/cert/apiclient_cert.pem");
@@ -549,7 +562,12 @@ class WxPayApi {
 		} else {
 			$error = curl_errno($ch);
 			curl_close($ch);
-			throw new WxPayException("curl出错，错误码:$error");
+			if ($error == "35") {
+				return self::postXmlCurl2($xml, $url);
+			} else {
+				throw new Exception("Error Processing Request" . $error, 1);
+
+			}
 		}
 	}
 

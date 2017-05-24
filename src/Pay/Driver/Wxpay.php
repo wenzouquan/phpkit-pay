@@ -5,7 +5,6 @@ require_once dirname(__FILE__) . '/WxPayPubHelper/lib/WxPay.NativePay.php';
 require_once dirname(__FILE__) . '/WxPayPubHelper/lib/WxPay.Notify.php';
 /**************************微信支付配置******************************************/
 define('CURL_TIMEOUT', "30");
-
 class Wxpay extends \phpkit\pay\Pay\Pay {
 	function __construct($alipay_config = array()) {
 		$this->alipay_config = $alipay_config;
@@ -15,7 +14,7 @@ class Wxpay extends \phpkit\pay\Pay\Pay {
 		define('MCHID', $this->alipay_config['MCHID']);
 		define('KEY', $this->alipay_config['KEY']);
 		define('APPSECRET', $this->alipay_config['APPSECRET']);
-		define('NOTIFY_URL', $this->alipay_config['notify_url']);
+		//define('NOTIFY_URL', $this->alipay_config['notify_url']);
 	}
 
 	public function check() {
@@ -37,17 +36,30 @@ class Wxpay extends \phpkit\pay\Pay\Pay {
 		$input->SetBody($vo->getTitle());
 		$input->SetAttach($vo->getTitle());
 		$total_fee = (($vo->getFee()) * 100);
+		$params = $vo->getParam();
 		//$input->SetOut_trade_no($this->alipay_config['MCHID'].date("YmdHis"));
 		$input->SetOut_trade_no($vo->getOrderNo());
 		$input->SetTotal_fee($total_fee);
 		$input->SetTime_start(date("YmdHis"));
 		$input->SetTime_expire(date("YmdHis", time() + 600));
 		$input->SetGoods_tag("test");
-		$input->SetNotify_url(NOTIFY_URL);
+		$input->SetNotify_url($params['notify_url']);
 		$input->SetTrade_type("NATIVE");
 		$input->SetProduct_id($vo->getOrderNo());
 		$result = $notify->GetPayUrl($input);
+		if ($result['return_code'] == 'FAIL') {
+			throw new \Exception($result['return_msg'], 1);
+
+		}
 		$url2 = $result["code_url"];
+		$params['title'] = $vo->getTitle();
+		$params['orderNo'] = $vo->getOrderNo();
+		$params['order_amount'] = $total_fee / 100;
+		$params['qrcode'] = 'http://paysdk.weixin.qq.com/example/qrcode.php?data=' . urlencode($url2);
+		$params['addtime'] = date("Y-m-d H:i:s");
+		//print_r($vo->getOrderNo());
+		//exit();
+
 		include dirname(__FILE__) . '/WxPayPubHelper/nativePay.php';
 
 	}

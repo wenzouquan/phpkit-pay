@@ -13,26 +13,26 @@ class Alipay extends \phpkit\pay\Pay\Pay {
 
 	public function check() {
 		if (!$this->config['email'] || !$this->config['key'] || !$this->config['partner']) {
-			E("支付宝设置有误！");
+			throw new \Exception("支付宝设置有误！");
 		}
 		return true;
 	}
 
 	public function buildRequestForm(\phpkit\pay\Pay\PayVo $vo) {
+		$voParams = $vo->getParam();
 		$param = array(
 			'service' => 'create_direct_pay_by_user',
 			'payment_type' => '1',
 			'_input_charset' => 'utf-8',
 			'seller_email' => $this->config['email'],
 			'partner' => $this->config['partner'],
-			'notify_url' => $this->config['notify_url'],
-			'return_url' => $this->config['return_url'],
+			'notify_url' => $voParams['notify_url'],
+			'return_url' => $voParams['return_url'],
 			'out_trade_no' => $vo->getOrderNo(),
 			'subject' => $vo->getTitle(),
 			'body' => $vo->getBody(),
 			'total_fee' => $vo->getFee(),
 		);
-
 		ksort($param);
 		reset($param);
 
@@ -81,7 +81,6 @@ class Alipay extends \phpkit\pay\Pay\Pay {
 
 		$prestr = $prestr . $this->config['key'];
 		$mysgin = md5($prestr);
-
 		if ($mysgin == $sign) {
 			return true;
 		} else {
@@ -97,12 +96,13 @@ class Alipay extends \phpkit\pay\Pay\Pay {
 
 		//生成签名结果
 		$isSign = $this->getSignVeryfy($notify, $notify["sign"]);
+
 		//获取支付宝远程服务器ATN结果（验证是否是支付宝发来的消息）
 		$responseTxt = 'true';
 		if (!empty($notify["notify_id"])) {
 			$responseTxt = $this->getResponse($notify["notify_id"]);
 		}
-
+		//print_r($responseTxt);
 		if (preg_match("/true$/i", $responseTxt) && $isSign) {
 			$this->setInfo($notify);
 			return true;

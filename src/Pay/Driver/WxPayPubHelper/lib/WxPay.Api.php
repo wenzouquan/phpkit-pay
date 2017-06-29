@@ -565,7 +565,7 @@ class WxPayApi {
 			if ($error == "35") {
 				return self::postXmlCurl2($xml, $url);
 			} else {
-				throw new Exception("Error Processing Request" . $error, 1);
+				throw new \Exception("curl Error " . $error, 1);
 
 			}
 		}

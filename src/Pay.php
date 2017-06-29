@@ -49,14 +49,6 @@ class Pay {
 		$pos = strrpos($driver, '\\');
 		$pos = $pos === false ? 0 : $pos + 1;
 		$apitype = strtolower(substr($driver, $pos));
-		// if ($_GET['storeDomain']) {
-		// 	$subDomain = "@" . $_GET['storeDomain'];
-		// }
-
-		// $url = HomeUrl . "/BoxPay/Index/notify";
-		// $this->config['notify_url'] = $url . "/method/notify/";
-		// $this->config['return_url'] = $url . "/method/return/";
-		//$config = array_merge($this->config, $config);
 		$this->payDone = false;
 		/* 设置支付驱动 */
 		if ($driver) {

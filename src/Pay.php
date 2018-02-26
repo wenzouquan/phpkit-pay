@@ -71,7 +71,8 @@ class Pay {
 			}
 			// BoxModel("test")->add(array('test'=>$out_trade_no));//测试可以删除
 		}
-		$xml = $GLOBALS['HTTP_RAW_POST_DATA']; //微信JS支付
+		//$xml = $GLOBALS['HTTP_RAW_POST_DATA']; //微信JS支付
+		$xml = $GLOBALS['HTTP_RAW_POST_DATA']?$GLOBALS['HTTP_RAW_POST_DATA']:file_get_contents('php://input');//微信JS支付
 		if ($xml) {
 			// BoxModel("test")->add(array('test'=>$xml));
 			$this->weixinNotifyData = json_decode(json_encode(simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA)), true);
@@ -84,30 +85,36 @@ class Pay {
 		$this->OrderNo = $out_trade_no;
 		return $out_trade_no;
 	}
+
+
 	//支付成功
 	public function success($successFuc = "") {
+		//$this->weixinNotifyData= unserialize('a:17:{s:5:"appid";s:18:"wx9f32634252113a93";s:9:"bank_type";s:3:"CFT";s:8:"cash_fee";s:2:"10";s:8:"fee_type";s:3:"CNY";s:12:"is_subscribe";s:1:"N";s:6:"mch_id";s:8:"10036811";s:9:"nonce_str";s:32:"y12urbkqp6ickkxrlddbdabylrdexrm1";s:6:"openid";s:28:"o_q354kv2Xr2hTXCaZTA45neqbic";s:12:"out_trade_no";s:15:"I2265489980290d";s:11:"result_code";s:7:"SUCCESS";s:11:"return_code";s:7:"SUCCESS";s:4:"sign";s:32:"3B50FAE478A5D2DC690DE7E411F54788";s:8:"time_end";s:14:"20180226222143";s:9:"total_fee";s:2:"10";s:10:"trade_type";s:5:"JSAPI";s:14:"transaction_id";s:28:"4200000099201802268935970295";s:3:"msg";s:22:"verifyNotify 没通过";}');
+		//unset($this->weixinNotifyData['msg']);
+		 
 		$isPost = false;
-		if (!empty($_POST)) {
+		if ($this->weixinNotifyData) {//微信支付
+			$isPost = true;
+			$notify = $this->weixinNotifyData;
+		}else if (!empty($_POST)) {
 			$isPost = true;
 			$notify = $_POST;
 		} elseif (!empty($_GET)) {
 			$notify = $_GET;
-		} elseif ($this->weixinNotifyData) {
-			$isPost = true;
-			$notify = $this->weixinNotifyData;
 		} else {
 			throw new \Exception("Access Denied", 1);
 		}
 		unset($notify['_url']);
 		unset($notify['method']);
 		unset($notify['storeDomain']);
+		//var_dump($notify);
 		//验证
 		if ($this->verifyNotify($notify)) {
 			//获取订单信息
 			$info = $this->getInfo();
 			if ($info['status'] == 1) {
 				if (!empty($successFuc)) {
-					$successFuc($info);
+					$successFuc($info,$notify);
 				}
 				if ($isPost === true) {
 					$pay->notifySuccess();
@@ -152,8 +159,14 @@ class Pay {
 	//去支付
 	public function run() {
 		$FormContent = $this->buildRequestForm($this->vo);
-		echo $FormContent;
+		$data = json_decode($FormContent,true);
+		if(is_array($data)){
+			$this->FormData= $data;	
+		}else{
+			echo $FormContent;
+		}
 		return $this;
+		
 	}
 
 	public function buildRequestForm(Pay\PayVo $vo) {
@@ -166,6 +179,7 @@ class Pay {
 	 * @param string $class 驱动类名称
 	 */
 	private function setDriver($class, $config) {
+		//var_dump($config);
 		$this->payer = new $class($config);
 		if (!$this->payer) {
 			throw new \Exception("不存在支付驱动：{$class}");

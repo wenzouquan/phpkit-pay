@@ -19,22 +19,26 @@ class Waptenpay extends \phpkit\pay\Pay\Pay {
 
 	public function check() {
 		if (!$this->alipay_config['MCHID'] || !$this->alipay_config['KEY'] || !$this->alipay_config['APPID']) {
-			E("微信设置有误！");
+			throw new \Exception("微信设置有误！", 1);
 		}
 		return true;
 	}
 
 	/****js_api_call***/
 	public function buildRequestForm(\phpkit\pay\Pay\PayVo $vo) {
+		//var_dump($vo);exit();
 		//必填
 		//dump($vo);
 		//使用jsapi接口
 		$jsApi = new JsApi_pub();
 		//=========步骤1：网页授权获取用户openid============
 		//通过code获得openid
-		$openid = $_GET['openid'] ? $_GET['openid'] : session('openid');
+		$openid = $_GET['openid'] ? $_GET['openid'] : '';
 		$code = $_GET['code'];
-
+		if($vo->getParam()['openid']){
+			$openid = $vo->getParam()['openid'];
+		}
+	 
 		if (!isset($code) && !isset($openid)) {
 			//触发微信返回code码
 			$backUrl = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
@@ -50,7 +54,7 @@ class Waptenpay extends \phpkit\pay\Pay\Pay {
 			$jsApi->setCode($code);
 			$openid = $jsApi->getOpenId();
 		}
-
+        
 		//$openid='oHDXRjrd9rqeHpp8W2yPHHFC_LE4';
 		//使用统一支付接口
 		$unifiedOrder = new UnifiedOrder_pub();
@@ -60,6 +64,7 @@ class Waptenpay extends \phpkit\pay\Pay\Pay {
 		$unifiedOrder->setParameter("body", $vo->getTitle()); //商品描述
 		//自定义订单号，此处仅作举例
 		//dump();exit();
+
 		$this->Url = $vo->getUrl();
 		$total_fee = $vo->getFee();
 		$unifiedOrder->setParameter("out_trade_no", $vo->getOrderNo()); //商户订单号
@@ -71,8 +76,8 @@ class Waptenpay extends \phpkit\pay\Pay\Pay {
 		//=========步骤3：使用jsapi调起支付============
 		$jsApi->setPrepayId($prepay_id);
 		$jsApiParameters = $jsApi->getParameters();
-		if (I('from_wx_app')) {
-			exit(json_encode(array('error' => 0, 'data' => $jsApiParameters)));
+		if ($vo->getParam()['type']=='from_wx_app') {
+			 return $jsApiParameters;
 		}
 		//echo $prepay_id;exit();
 		include dirname(__FILE__) . '/WxPayPubHelper/js_api_call.php';
@@ -89,7 +94,9 @@ class Waptenpay extends \phpkit\pay\Pay\Pay {
 		$notify = new Notify_pub();
 
 		//存储微信的回调
-		$xml = $GLOBALS['HTTP_RAW_POST_DATA'];
+		$xml = $GLOBALS['HTTP_RAW_POST_DATA']?$GLOBALS['HTTP_RAW_POST_DATA']:file_get_contents('php://input');
+		//$xml = file_get_contents('php://input');
+		//var_dump($notifydata);
 		$notify->saveData($xml);
 		//验证签名，并回应微信。
 		//对后台通知交互时，如果微信收到商户的应答不是成功或超时，微信认为通知失败，
@@ -414,6 +421,7 @@ class UnifiedOrder_pub extends Wxpay_client_pub {
 	function createXml() {
 		try {
 			//检测必填参数
+
 			if ($this->parameters["out_trade_no"] == null) {
 				throw new SDKRuntimeException("缺少统一支付接口必填参数out_trade_no！" . "<br>");
 			} elseif ($this->parameters["body"] == null) {

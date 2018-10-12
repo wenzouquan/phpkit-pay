@@ -37,8 +37,8 @@ class PayVo {
 	}
 
 	/**
-	 * 设置商品价格
-	 * @param type $fee
+	 * 设置用户ID
+	 * @param type $user_id
 	 * @return \phpkit\pay\Pay\PayVo
 	 */
 	public function setUserId($user_id) {
